@@ -1,6 +1,9 @@
 import os
 
+from dotenv import load_dotenv
 from openai import OpenAI
+
+load_dotenv()  # loads .env from the repo root; real OS env vars take precedence
 
 client = OpenAI(
     # If the environment variable is not set, replace it with your Model Studio API key: api_key="sk-xxx"
