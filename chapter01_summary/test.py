@@ -6,7 +6,7 @@ load_dotenv()  # loads .env from the repo root; real OS env vars take precedence
 
 client = OpenAI(
     api_key=os.getenv("LLM_API_KEY"),
-    base_url=os.getenv("DASHSCOPE_BASE_URL"),
+    base_url=os.getenv("LLM_BASE_URL"),
 )
 
 messages = [{"role": "user", "content": "你好"}]
