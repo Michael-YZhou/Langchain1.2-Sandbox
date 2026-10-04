@@ -1,19 +1,12 @@
-from openai import OpenAI
-from dotenv import load_dotenv
-import os
+from common.llm import get_client_and_model, reasoning_text, thinking_extra_body
 
-load_dotenv()  # loads .env from the repo root; real OS env vars take precedence
-
-client = OpenAI(
-    api_key=os.getenv("LLM_API_KEY"),
-    base_url=os.getenv("LLM_BASE_URL"),
-)
+client, model = get_client_and_model()
 
 messages = [{"role": "user", "content": "你好"}]
 completion = client.chat.completions.create(
-    model="qwen3.8-max",  # You can replace this with another deep thinking models
+    model=model,  # set DASHSCOPE_MODEL / OLLAMA_MODEL to a deep thinking model
     messages=messages,
-    extra_body={"enable_thinking": True},
+    extra_body=thinking_extra_body(),
     stream=True
 )
 is_answering = False  # Indicates whether the response phase has started
@@ -22,9 +15,10 @@ for chunk in completion:
     if not chunk.choices:
         continue
     delta = chunk.choices[0].delta
-    if hasattr(delta, "reasoning_content") and delta.reasoning_content is not None:
+    reasoning = reasoning_text(delta)
+    if reasoning is not None:
         if not is_answering:
-            print(delta.reasoning_content, end="", flush=True)
+            print(reasoning, end="", flush=True)
     if hasattr(delta, "content") and delta.content:
         if not is_answering:
             print("\n" + "=" * 20 + "Full response" + "=" * 20)

@@ -8,15 +8,22 @@ The material is organized into one directory per chapter. Every file is a standa
 
 ```
 .
+├── common/
+│   └── llm.py         # Builds the client for the provider chosen by LLM_PROVIDER
 ├── chapter01_summary/
 │   └── test.py        # Streams a Qwen "thinking" model response (reasoning, then answer)
 ├── .env.example       # Template for the required environment variables
 └── main.py            # Unused PyCharm template stub
 ```
 
-## Model provider
+## Model providers
 
-LLM calls go to **Alibaba Cloud Model Studio (DashScope / Qwen)** through its OpenAI-compatible endpoint, not to OpenAI. That's why the scripts use the `openai` client with a custom `base_url`.
+Scripts can talk to either of two backends, chosen by `LLM_PROVIDER`:
+
+- `dashscope`: **Alibaba Cloud Model Studio (DashScope / Qwen)** in the cloud
+- `ollama`: a local **Ollama** server
+
+Both expose an OpenAI-compatible API, so the scripts use the `openai` client with a custom `base_url`. `common/llm.py` reads the provider's settings and returns a ready client and model name. It also covers the two places where the providers differ: how to turn thinking on and which delta field carries the reasoning.
 
 ## Setup
 
@@ -41,24 +48,33 @@ LLM calls go to **Alibaba Cloud Model Studio (DashScope / Qwen)** through its Op
 
    Then fill in `.env`:
 
-   | Variable             | Purpose                                   |
-   | -------------------- | ----------------------------------------- |
-   | `LLM_API_KEY`        | Your DashScope / Model Studio API key     |
-   | `DASHSCOPE_BASE_URL` | The OpenAI-compatible endpoint URL        |
+   | Variable             | Purpose                                       |
+   | -------------------- | --------------------------------------------- |
+   | `LLM_PROVIDER`       | `dashscope` (default) or `ollama`             |
+   | `DASHSCOPE_API_KEY`  | Your DashScope / Model Studio API key         |
+   | `DASHSCOPE_BASE_URL` | DashScope's OpenAI-compatible endpoint URL    |
+   | `DASHSCOPE_MODEL`    | Cloud model name, e.g. `qwen3.8-max`          |
+   | `OLLAMA_BASE_URL`    | Usually `http://localhost:11434/v1`           |
+   | `OLLAMA_MODEL`       | A model you've pulled (see `ollama list`)     |
 
-   `.env` is gitignored. Each script loads it with `load_dotenv()`, and real OS environment variables take precedence over it. Never hardcode keys in scripts.
+   `.env` is gitignored. `common/llm.py` loads it with `load_dotenv()`, and real OS environment variables take precedence over it. Never hardcode keys in scripts.
 
 ## Running
 
+Run scripts as modules from the repo root, so that `common` can be imported:
+
 ```bash
 conda activate langchain1.2
-python chapter01_summary/test.py
+python -m chapter01_summary.test                      # uses LLM_PROVIDER from .env
+LLM_PROVIDER=ollama python -m chapter01_summary.test  # one-off switch to local Ollama
 ```
 
-Despite its name, `test.py` is a demo, not a pytest test. It sends a prompt to a Qwen thinking model with `enable_thinking` turned on. It prints the streamed reasoning (`reasoning_content`) first, then the final answer (`content`).
+`python chapter01_summary/test.py` fails with `ModuleNotFoundError: No module named 'common'`. PyCharm run configurations work as-is, because they add the project root to `PYTHONPATH`.
+
+Despite its name, `test.py` is a demo, not a pytest test. It sends a prompt to a thinking model with thinking turned on. It prints the streamed reasoning first, then the final answer.
 
 ## Adding a new chapter
 
 - Create a `chapterNN_<topic>/` directory and put standalone scripts in it.
-- Load config with `load_dotenv()` and read values with `os.getenv(...)`.
+- Get a client with `from common.llm import get_client_and_model` instead of building one yourself.
 - If you add a new environment variable, add it to both `.env` and `.env.example`.

@@ -12,14 +12,18 @@ A personal learning workspace for LangChain 1.2 and LLM APIs, organized into one
 
 - Python interpreter: the conda env `langchain1.2` (`~/miniconda3/envs/langchain1.2`), as configured in `.idea/misc.xml`. Activate it with `conda activate langchain1.2` before running anything.
 - No `requirements.txt` exists. Install packages straight into that env (e.g. `pip install openai langchain python-dotenv`).
-- LLM calls go to Alibaba Cloud Model Studio (DashScope / Qwen) through its OpenAI-compatible endpoint, not to OpenAI.
-- Config comes from env vars, loaded in each script with `load_dotenv()` from a gitignored `.env` at the repo root (see `.env.example` for the keys: `LLM_API_KEY` for the API key, `DASHSCOPE_BASE_URL` for the endpoint). Real OS env vars take precedence over `.env`. Never hardcode keys in scripts; when adding a new variable, add it to both `.env` and `.env.example`.
+- LLM calls go through the OpenAI client to one of two OpenAI-compatible backends, chosen by `LLM_PROVIDER`: `dashscope` (Alibaba Cloud Model Studio / Qwen, the default) or `ollama` (local server). Not to OpenAI.
+- `common/llm.py` owns provider selection. Scripts call `get_client_and_model()`, `thinking_extra_body()` and `reasoning_text(delta)` instead of building clients or reading provider env vars themselves. Thinking differs per provider: DashScope takes `enable_thinking` and streams `reasoning_content`, while Ollama takes `reasoning_effort` and streams `reasoning`.
+- Config comes from env vars, loaded by `common/llm.py` with `load_dotenv()` from a gitignored `.env` at the repo root (keys in `.env.example`: `LLM_PROVIDER`, `DASHSCOPE_API_KEY`/`DASHSCOPE_BASE_URL`/`DASHSCOPE_MODEL`, `OLLAMA_BASE_URL`/`OLLAMA_MODEL`). Real OS env vars take precedence over `.env`. Never hardcode keys in scripts; when adding a new variable, add it to both `.env` and `.env.example`.
 
 ## Running
 
+Run scripts as modules from the repo root so `common` is importable (`python chapter01_summary/test.py` fails with `ModuleNotFoundError`):
+
 ```bash
 conda activate langchain1.2
-python chapter01_summary/test.py
+python -m chapter01_summary.test
+LLM_PROVIDER=ollama python -m chapter01_summary.test
 ```
 
-Despite its name, `test.py` is a demo script, not a pytest test. It streams a Qwen "thinking" model response (`extra_body={"enable_thinking": True}`), printing `delta.reasoning_content` first and then `delta.content`.
+Despite its name, `test.py` is a demo script, not a pytest test. It streams a thinking model's response, printing the reasoning first and then `delta.content`.
