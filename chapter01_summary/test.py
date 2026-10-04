@@ -2,7 +2,10 @@ from common.llm import get_client_and_model, reasoning_text, thinking_extra_body
 
 client, model = get_client_and_model()
 
-messages = [{"role": "user", "content": "你好"}]
+messages = [{"role": "system", "content": ""},
+            {"role": "assistant", "content": ""},
+            {"role": "user", "content": "你好"}]
+
 completion = client.chat.completions.create(
     model=model,  # set DASHSCOPE_MODEL / OLLAMA_MODEL to a deep thinking model
     messages=messages,
