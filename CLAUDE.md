@@ -12,8 +12,8 @@ A personal learning workspace for LangChain 1.2 and LLM APIs, organized into one
 
 - Python interpreter: the conda env `langchain1.2` (`~/miniconda3/envs/langchain1.2`), as configured in `.idea/misc.xml`. Activate it with `conda activate langchain1.2` before running anything.
 - No `requirements.txt` exists. Install packages straight into that env (e.g. `pip install openai langchain python-dotenv`).
-- LLM calls go through the OpenAI client to one of two OpenAI-compatible backends, chosen by `LLM_PROVIDER`: `dashscope` (Alibaba Cloud Model Studio / Qwen, the default) or `ollama` (local server). Not to OpenAI.
-- `common/llm.py` owns provider selection. Scripts call `get_client_and_model()`, `thinking_extra_body()` and `reasoning_text(delta)` instead of building clients or reading provider env vars themselves. Thinking differs per provider: DashScope takes `enable_thinking` and streams `reasoning_content`, while Ollama takes `reasoning_effort` and streams `reasoning`.
+- LLM calls go through LangChain chat models (`init_chat_model`) to one of two backends, chosen by `LLM_PROVIDER`: `dashscope` (Alibaba Cloud Model Studio / Qwen, the default) or `ollama` (local server). Not to OpenAI.
+- `common/llm.py` owns provider selection. Scripts call `get_chat_model(thinking=True)` and `reasoning_text(chunk)` instead of building models or reading provider env vars themselves. DashScope uses `ChatDeepSeek` pointed at its OpenAI-compatible endpoint (plain `ChatOpenAI` drops `reasoning_content`) with `extra_body={"enable_thinking": ...}`; Ollama uses `ChatOllama` with `reasoning=...` against the native API, so `OLLAMA_BASE_URL` has no `/v1`. Both put streamed thinking text in `chunk.additional_kwargs["reasoning_content"]`.
 - Config comes from env vars, loaded by `common/llm.py` with `load_dotenv()` from a gitignored `.env` at the repo root (keys in `.env.example`: `LLM_PROVIDER`, `DASHSCOPE_API_KEY`/`DASHSCOPE_BASE_URL`/`DASHSCOPE_MODEL`, `OLLAMA_BASE_URL`/`OLLAMA_MODEL`). Real OS env vars take precedence over `.env`. Never hardcode keys in scripts; when adding a new variable, add it to both `.env` and `.env.example`.
 
 ## Running
@@ -26,4 +26,4 @@ python -m chapter01_summary.test
 LLM_PROVIDER=ollama python -m chapter01_summary.test
 ```
 
-Despite its name, `test.py` is a demo script, not a pytest test. It streams a thinking model's response, printing the reasoning first and then `delta.content`.
+Despite its name, `test.py` is a demo script, not a pytest test. It streams a thinking model's response with `model.stream()`, printing the reasoning first and then `chunk.content`. `test_0.py` is the raw OpenAI-SDK DashScope example, kept for comparison.

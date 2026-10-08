@@ -1,13 +1,14 @@
-"""Pick the LLM backend from LLM_PROVIDER and build an OpenAI-compatible client for it.
+"""Pick the LLM backend from LLM_PROVIDER and build a LangChain chat model for it.
 
-Both backends speak the OpenAI chat-completions API, so only the endpoint, key,
-model name, and thinking switch differ. Override per run without editing .env:
+DashScope goes through ChatDeepSeek: it talks to any OpenAI-compatible endpoint and,
+unlike ChatOpenAI, keeps the streamed reasoning_content. Ollama goes through ChatOllama,
+which uses Ollama's native API. Override per run without editing .env:
     LLM_PROVIDER=ollama python -m chapter01_summary.test
 """
 import os
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from langchain.chat_models import init_chat_model
 
 load_dotenv()  # loads .env from the repo root; real OS env vars take precedence
 
@@ -29,23 +30,24 @@ def get_provider():
     return provider
 
 
-def get_client_and_model():
-    """Return (client, model) for the configured provider."""
+def get_chat_model(thinking=True):
+    """Return a chat model for the configured provider, with the thinking phase on or off."""
     if get_provider() == "ollama":
-        # Ollama ignores the key, but the OpenAI client refuses to start without one.
-        client = OpenAI(api_key="ollama", base_url=_require("OLLAMA_BASE_URL"))
-        return client, _require("OLLAMA_MODEL")
-    client = OpenAI(api_key=_require("DASHSCOPE_API_KEY"), base_url=_require("DASHSCOPE_BASE_URL"))
-    return client, _require("DASHSCOPE_MODEL")
+        return init_chat_model(
+            _require("OLLAMA_MODEL"),
+            model_provider="ollama",
+            base_url=_require("OLLAMA_BASE_URL"),
+            reasoning=thinking,
+        )
+    return init_chat_model(
+        _require("DASHSCOPE_MODEL"),
+        model_provider="deepseek",
+        api_key=_require("DASHSCOPE_API_KEY"),
+        api_base=_require("DASHSCOPE_BASE_URL"),
+        extra_body={"enable_thinking": thinking},
+    )
 
 
-def thinking_extra_body():
-    """Request params that turn on the model's thinking phase for this provider."""
-    if get_provider() == "ollama":
-        return {"reasoning_effort": "medium"}
-    return {"enable_thinking": True}
-
-
-def reasoning_text(delta):
-    """Reasoning text in a streamed delta: DashScope calls it reasoning_content, Ollama calls it reasoning."""
-    return getattr(delta, "reasoning_content", None) or getattr(delta, "reasoning", None)
+def reasoning_text(chunk):
+    """Reasoning text in a streamed AIMessageChunk; both providers put it in additional_kwargs."""
+    return chunk.additional_kwargs.get("reasoning_content")

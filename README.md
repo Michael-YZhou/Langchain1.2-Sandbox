@@ -23,7 +23,7 @@ Scripts can talk to either of two backends, chosen by `LLM_PROVIDER`:
 - `dashscope`: **Alibaba Cloud Model Studio (DashScope / Qwen)** in the cloud
 - `ollama`: a local **Ollama** server
 
-Both expose an OpenAI-compatible API, so the scripts use the `openai` client with a custom `base_url`. `common/llm.py` reads the provider's settings and returns a ready client and model name. It also covers the two places where the providers differ: how to turn thinking on and which delta field carries the reasoning.
+The scripts use LangChain chat models built with `init_chat_model`. `common/llm.py` reads the provider's settings and returns a ready model with thinking turned on. DashScope goes through `ChatDeepSeek` pointed at its OpenAI-compatible endpoint, because plain `ChatOpenAI` drops the reasoning text. Ollama goes through `ChatOllama` and its native API. Both put the streamed reasoning in `chunk.additional_kwargs["reasoning_content"]`.
 
 ## Setup
 
@@ -54,7 +54,7 @@ Both expose an OpenAI-compatible API, so the scripts use the `openai` client wit
    | `DASHSCOPE_API_KEY`  | Your DashScope / Model Studio API key         |
    | `DASHSCOPE_BASE_URL` | DashScope's OpenAI-compatible endpoint URL    |
    | `DASHSCOPE_MODEL`    | Cloud model name, e.g. `qwen3.8-max`          |
-   | `OLLAMA_BASE_URL`    | Usually `http://localhost:11434/v1`           |
+   | `OLLAMA_BASE_URL`    | Usually `http://localhost:11434` (no `/v1`)   |
    | `OLLAMA_MODEL`       | A model you've pulled (see `ollama list`)     |
 
    `.env` is gitignored. `common/llm.py` loads it with `load_dotenv()`, and real OS environment variables take precedence over it. Never hardcode keys in scripts.
@@ -76,5 +76,5 @@ Despite its name, `test.py` is a demo, not a pytest test. It sends a prompt to a
 ## Adding a new chapter
 
 - Create a `chapterNN_<topic>/` directory and put standalone scripts in it.
-- Get a client with `from common.llm import get_client_and_model` instead of building one yourself.
+- Get a chat model with `from common.llm import get_chat_model` instead of building one yourself.
 - If you add a new environment variable, add it to both `.env` and `.env.example`.
