@@ -3,7 +3,7 @@
 DashScope goes through ChatDeepSeek: it talks to any OpenAI-compatible endpoint and,
 unlike ChatOpenAI, keeps the streamed reasoning_content. Ollama goes through ChatOllama,
 which uses Ollama's native API. Override per run without editing .env:
-    LLM_PROVIDER=ollama python -m chapter01_summary.test
+    LLM_PROVIDER=ollama python -m chapter02_models.test
 """
 import os
 

@@ -9,8 +9,10 @@ The material is organized into one directory per chapter. Every file is a standa
 ```
 .
 ├── common/
-│   └── llm.py         # Builds the client for the provider chosen by LLM_PROVIDER
+│   └── llm.py         # Builds the chat model for the provider chosen by LLM_PROVIDER
 ├── chapter01_summary/
+│   └── test_0.py      # Raw OpenAI-SDK DashScope streaming example
+├── chapter02_models/
 │   └── test.py        # Streams a Qwen "thinking" model response (reasoning, then answer)
 ├── .env.example       # Template for the required environment variables
 └── main.py            # Unused PyCharm template stub
@@ -65,11 +67,11 @@ Run scripts as modules from the repo root, so that `common` can be imported:
 
 ```bash
 conda activate langchain1.2
-python -m chapter01_summary.test                      # uses LLM_PROVIDER from .env
-LLM_PROVIDER=ollama python -m chapter01_summary.test  # one-off switch to local Ollama
+python -m chapter02_models.test                      # uses LLM_PROVIDER from .env
+LLM_PROVIDER=ollama python -m chapter02_models.test  # one-off switch to local Ollama
 ```
 
-`python chapter01_summary/test.py` fails with `ModuleNotFoundError: No module named 'common'`. PyCharm run configurations work as-is, because they add the project root to `PYTHONPATH`.
+`python chapter02_models/test.py` fails with `ModuleNotFoundError: No module named 'common'`. PyCharm run configurations work as-is, because they add the project root to `PYTHONPATH`.
 
 Despite its name, `test.py` is a demo, not a pytest test. It sends a prompt to a thinking model with thinking turned on. It prints the streamed reasoning first, then the final answer.
 
