@@ -4,14 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A personal learning workspace for LangChain 1.2 and LLM APIs, organized into one directory per chapter (`chapter01_summary/`, `chapter02_models/`, ...). There is no package, build system, test suite, linter config, or dependency manifest. Each file is a standalone script meant to be run directly.
+A personal learning workspace for LangChain 1.2 and LLM APIs, organized into one directory per chapter (`chapter01_summary/`, `chapter02_models/`, ...). There is no package, build system, test suite, or linter config; dependencies are pinned in `requirements.txt`. Each file is a standalone script meant to be run directly.
 
 `main.py` at the root is the unused PyCharm template stub.
 
 ## Environment
 
 - Python interpreter: the conda env `langchain1.2` (`~/miniconda3/envs/langchain1.2`), as configured in `.idea/misc.xml`. Activate it with `conda activate langchain1.2` before running anything.
-- No `requirements.txt` exists. Install packages straight into that env (e.g. `pip install openai langchain python-dotenv`).
+- Install dependencies with `pip install -r requirements.txt`. It pins the whole course stack (LangGraph, MCP, providers, web, etc.), not just what the current scripts import; the RAG / document-parsing block at the bottom is commented out until those chapters. When adding a package, add it to the matching section with a pinned version.
 - LLM calls go through LangChain chat models (`init_chat_model`) to one of two backends, chosen by `LLM_PROVIDER`: `dashscope` (Alibaba Cloud Model Studio / Qwen, the default) or `ollama` (local server). Not to OpenAI.
 - `common/llm.py` owns provider selection. Scripts call `get_chat_model(thinking=True)` and `reasoning_text(chunk)` instead of building models or reading provider env vars themselves. DashScope uses `ChatDeepSeek` pointed at its OpenAI-compatible endpoint (plain `ChatOpenAI` drops `reasoning_content`) with `extra_body={"enable_thinking": ...}`; Ollama uses `ChatOllama` with `reasoning=...` against the native API, so `OLLAMA_BASE_URL` has no `/v1`. Both put streamed thinking text in `chunk.additional_kwargs["reasoning_content"]`.
 - Config comes from env vars, loaded by `common/llm.py` with `load_dotenv()` from a gitignored `.env` at the repo root (keys in `.env.example`: `LLM_PROVIDER`, `DASHSCOPE_API_KEY`/`DASHSCOPE_BASE_URL`/`DASHSCOPE_MODEL`, `OLLAMA_BASE_URL`/`OLLAMA_MODEL`). Real OS env vars take precedence over `.env`. Never hardcode keys in scripts; when adding a new variable, add it to both `.env` and `.env.example`.
