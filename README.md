@@ -73,7 +73,7 @@ LLM_PROVIDER=ollama python -m chapter02_models.test  # one-off switch to local O
 
 `python chapter02_models/test.py` fails with `ModuleNotFoundError: No module named 'common'`. PyCharm run configurations work as-is, because they add the project root to `PYTHONPATH`.
 
-Despite its name, `test.py` is a demo, not a pytest test. It sends a prompt to a thinking model with thinking turned on. It prints the streamed reasoning first, then the final answer.
+Despite its name, `test_init_chat_model.py` is a demo, not a pytest test. It sends a prompt to a thinking model with thinking turned on. It prints the streamed reasoning first, then the final answer.
 
 ## Adding a new chapter
 

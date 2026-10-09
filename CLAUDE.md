@@ -26,4 +26,4 @@ python -m chapter02_models.test
 LLM_PROVIDER=ollama python -m chapter02_models.test
 ```
 
-Despite its name, `test.py` is a demo script, not a pytest test. It streams a thinking model's response with `model.stream()`, printing the reasoning first and then `chunk.content`. `chapter01_summary/test_0.py` is the raw OpenAI-SDK DashScope example, kept for comparison.
+Despite its name, `test_init_chat_model.py` is a demo script, not a pytest test. It streams a thinking model's response with `model.stream()`, printing the reasoning first and then `chunk.content`. `chapter01_summary/test_0.py` is the raw OpenAI-SDK DashScope example, kept for comparison.
