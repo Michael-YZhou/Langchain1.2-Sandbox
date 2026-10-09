@@ -26,4 +26,4 @@ python -m chapter02_models.test
 LLM_PROVIDER=ollama python -m chapter02_models.test
 ```
 
-Despite its name, `test_init_chat_model.py` is a demo script, not a pytest test. It streams a thinking model's response with `model.stream()`, printing the reasoning first and then `chunk.content`. `chapter01_summary/test_0.py` is the raw OpenAI-SDK DashScope example, kept for comparison.
+Despite its name, `chapter02_models/test.py` is a demo script, not a pytest test. It streams a thinking model's response with `model.stream()`, printing the reasoning first and then `chunk.content`. `chapter01_summary/test_0.py` is the raw OpenAI-SDK DashScope example, kept for comparison. `chapter03_langsmith/` holds LangSmith tracing demos (`LANGSMITH_*` vars in `.env`): `test_init_chat_model.py` is a copy of the chapter02 demo, and `test_chat_openai.py` streams through plain `ChatOpenAI`, so it prints no reasoning. All `test_*.py` names are demos; PyCharm runs them under pytest by default, which only imports them.

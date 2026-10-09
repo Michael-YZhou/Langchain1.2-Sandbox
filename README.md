@@ -14,6 +14,9 @@ The material is organized into one directory per chapter. Every file is a standa
 │   └── test_0.py      # Raw OpenAI-SDK DashScope streaming example
 ├── chapter02_models/
 │   └── test.py        # Streams a Qwen "thinking" model response (reasoning, then answer)
+├── chapter03_langsmith/
+│   ├── test_chat_openai.py      # Streams Qwen through ChatOpenAI (answer only, no reasoning)
+│   └── test_init_chat_model.py  # Copy of chapter02_models/test.py, for LangSmith tracing
 ├── .env.example       # Template for the required environment variables
 └── main.py            # Unused PyCharm template stub
 ```
@@ -73,7 +76,7 @@ LLM_PROVIDER=ollama python -m chapter02_models.test  # one-off switch to local O
 
 `python chapter02_models/test.py` fails with `ModuleNotFoundError: No module named 'common'`. PyCharm run configurations work as-is, because they add the project root to `PYTHONPATH`.
 
-Despite its name, `test_init_chat_model.py` is a demo, not a pytest test. It sends a prompt to a thinking model with thinking turned on. It prints the streamed reasoning first, then the final answer.
+Despite its name, `chapter02_models/test.py` is a demo, not a pytest test. It sends a prompt to a thinking model with thinking turned on. It prints the streamed reasoning first, then the final answer.
 
 ## Adding a new chapter
 
