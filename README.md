@@ -22,7 +22,7 @@ The material is organized into one directory per chapter. Every file is a standa
 ├── chapter05_tools/
 │   └── chat_prompt_template.py  # Tool calling: model requests get_weather, gets the result, answers
 ├── chapter06_structured_output/
-│   └── structured_output.py     # with_structured_output: reply parsed into a Pydantic MovieModel
+│   └── structured_output.py     # with_structured_output: raw reply plus a parsed Pydantic MovieModel
 ├── .env.example       # Template for the required environment variables
 ├── requirements.txt   # Pinned dependencies for the whole course
 └── main.py            # Unused PyCharm template stub
@@ -90,7 +90,7 @@ Despite its name, `chapter02_models/test.py` is a demo, not a pytest test. It se
 
 `chapter05_tools/chat_prompt_template.py` shows a full tool-calling round trip. It binds a `get_weather` tool to the model, runs the tool call the model asks for, and sends the result back so the model can give a final answer. The conversation history is built from `prompt_value.to_messages()`. The raw `messages` list passed to `ChatPromptTemplate` still has its `{placeholders}`, so the model would see those literally if you sent it that list.
 
-`chapter06_structured_output/structured_output.py` asks for structured output. `with_structured_output(MovieModel)` makes `invoke()` return a validated `MovieModel` (title, year, director, rating) instead of text, and the result is pretty-printed with `rich`. The messages are a plain list, not a `ChatPromptTemplate`, so the `{name}` in the system message is sent as-is.
+`chapter06_structured_output/structured_output.py` asks for structured output. `with_structured_output(MovieModel, include_raw=True)` makes `invoke()` return a dict instead of text: `raw` is the model's original `AIMessage`, `parsed` is the validated `MovieModel` (title, year, director, rating), and `parsing_error` holds the exception if parsing failed (otherwise `None`). The dict is pretty-printed with `rich`. Without `include_raw`, `invoke()` returns just the `MovieModel`. The messages are a plain list, not a `ChatPromptTemplate`, so the `{name}` in the system message is sent as-is.
 
 ## Adding a new chapter
 
