@@ -10,7 +10,7 @@ class MovieModel(BaseModel):
     rating: float = Field(description="评分（10分制）")
 
 model = get_chat_model()  # set DASHSCOPE_MODEL / OLLAMA_MODEL to a deep thinking model
-structured_model = model.with_structured_output(MovieModel)
+structured_model = model.with_structured_output(MovieModel, include_raw=True)
 
 messages = [
     ("system", "你是一个友好的AI助手，你的名字叫{name}"),
