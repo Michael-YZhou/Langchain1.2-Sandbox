@@ -23,6 +23,11 @@ The material is organized into one directory per chapter. Every file is a standa
 │   └── chat_prompt_template.py  # Tool calling: model requests get_weather, gets the result, answers
 ├── chapter06_structured_output/
 │   └── structured_output.py     # with_structured_output: raw reply plus a parsed Pydantic MovieModel
+├── chapter07_agents/
+│   ├── agent.py                 # create_agent with three tools and chat history kept across turns
+│   └── interactive_loop_agent.py  # Chat with that agent in the terminal (reset / exit)
+├── chapter08_middleware/
+│   └── summarization.py         # SummarizationMiddleware: a small model summarises old history
 ├── .env.example       # Template for the required environment variables
 ├── requirements.txt   # Pinned dependencies for the whole course
 └── main.py            # Unused PyCharm template stub
@@ -68,6 +73,7 @@ The scripts use LangChain chat models built with `init_chat_model`. `common/llm.
    | `DASHSCOPE_API_KEY`  | Your DashScope / Model Studio API key         |
    | `DASHSCOPE_BASE_URL` | DashScope's OpenAI-compatible endpoint URL    |
    | `DASHSCOPE_MODEL`    | Cloud model name, e.g. `qwen3.8-max`          |
+   | `DASHSCOPE_SUMMARY_MODEL` | Small model for summarising, e.g. `qwen-flash` (chapter08) |
    | `OLLAMA_BASE_URL`    | Usually `http://localhost:11434` (no `/v1`)   |
    | `OLLAMA_MODEL`       | A model you've pulled (see `ollama list`)     |
    | `LANGSMITH_*`        | LangSmith tracing settings, for chapter03     |
@@ -91,6 +97,10 @@ Despite its name, `chapter02_models/test.py` is a demo, not a pytest test. It se
 `chapter05_tools/chat_prompt_template.py` shows a full tool-calling round trip. It binds a `get_weather` tool to the model, runs the tool call the model asks for, and sends the result back so the model can give a final answer. The conversation history is built from `prompt_value.to_messages()`. The raw `messages` list passed to `ChatPromptTemplate` still has its `{placeholders}`, so the model would see those literally if you sent it that list.
 
 `chapter06_structured_output/structured_output.py` asks for structured output. `with_structured_output(MovieModel, include_raw=True)` makes `invoke()` return a dict instead of text: `raw` is the model's original `AIMessage`, `parsed` is the validated `MovieModel` (title, year, director, rating), and `parsing_error` holds the exception if parsing failed (otherwise `None`). The dict is pretty-printed with `rich`. Without `include_raw`, `invoke()` returns just the `MovieModel`. The messages are a plain list, not a `ChatPromptTemplate`, so the `{name}` in the system message is sent as-is.
+
+`chapter07_agents/agent.py` builds an agent with `create_agent` and three tools (`get_weather`, `check_stock`, `multiply`). `SmartAgent` keeps the whole conversation, including tool calls, in `self.messages`, so a follow-up like "multiply the last result by 2" works. `reset()` clears it. `python -m chapter07_agents.interactive_loop_agent` lets you chat with the same agent in the terminal. Type `reset` to clear the history and `exit` to quit.
+
+`chapter08_middleware/summarization.py` adds `SummarizationMiddleware` to an agent. The default model chats, while a small DashScope model from `get_summary_model()` (`DASHSCOPE_SUMMARY_MODEL`, thinking off) writes the summary with a Chinese `summary_prompt`. The triggers are tiny on purpose, so a 6-message history fires them: 6 messages, 100 tokens, or 0.001 of `max_input_tokens`. The `fraction` trigger reads `max_input_tokens` from the summary model's profile, so the script sets `profile={"max_input_tokens": 128000}`. `keep=("messages", 3)` counts from the end of the input, the new question included. It keeps the last history turn plus the new question and replaces everything before them with one summary message.
 
 ## Adding a new chapter
 
