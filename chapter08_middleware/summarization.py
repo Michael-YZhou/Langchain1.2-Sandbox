@@ -22,6 +22,9 @@ agent = create_agent(
             trigger=[("messages", 6), ("tokens", 100), ("fraction", 0.001)],
             # keep only the latest 2 messages verbatim; everything before goes into the summary
             keep=("messages", 2),
+            # replaces the built-in English prompt so the summary comes back in Chinese;
+            # the middleware fills {messages} with the messages being summarised
+            summary_prompt="对历史消息的摘要，消息列表如下\n{messages}"
         )
     ],
 )
