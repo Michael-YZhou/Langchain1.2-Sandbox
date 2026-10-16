@@ -48,6 +48,21 @@ def get_chat_model(thinking=True):
     )
 
 
+def get_summary_model(**kwargs):
+    """Return the small DashScope model (DASHSCOPE_SUMMARY_MODEL) for summarising, thinking off.
+
+    Extra kwargs go to the model constructor, e.g. profile={"max_input_tokens": 128000}.
+    """
+    return init_chat_model(
+        _require("DASHSCOPE_SUMMARY_MODEL"),
+        model_provider="deepseek",
+        api_key=_require("DASHSCOPE_API_KEY"),
+        api_base=_require("DASHSCOPE_BASE_URL"),
+        extra_body={"enable_thinking": False},
+        **kwargs,
+    )
+
+
 def reasoning_text(chunk):
     """Reasoning text in a streamed AIMessageChunk; both providers put it in additional_kwargs."""
     return chunk.additional_kwargs.get("reasoning_content")
