@@ -27,7 +27,8 @@ The material is organized into one directory per chapter. Every file is a standa
 │   ├── agent.py                 # create_agent with three tools and chat history kept across turns
 │   └── interactive_loop_agent.py  # Chat with that agent in the terminal (reset / exit)
 ├── chapter08_middleware/
-│   └── summarization.py         # SummarizationMiddleware: a small model summarises old history
+│   ├── summarization.py         # SummarizationMiddleware: a small model summarises old history
+│   └── human_in_the_loop.py     # HumanInTheLoopMiddleware: approve or reject each tool call
 ├── .env.example       # Template for the required environment variables
 ├── requirements.txt   # Pinned dependencies for the whole course
 └── main.py            # Unused PyCharm template stub
@@ -101,6 +102,12 @@ Despite its name, `chapter02_models/test.py` is a demo, not a pytest test. It se
 `chapter07_agents/agent.py` builds an agent with `create_agent` and three tools (`get_weather`, `check_stock`, `multiply`). `SmartAgent` keeps the whole conversation, including tool calls, in `self.messages`, so a follow-up like "multiply the last result by 2" works. `reset()` clears it. `python -m chapter07_agents.interactive_loop_agent` lets you chat with the same agent in the terminal. Type `reset` to clear the history and `exit` to quit.
 
 `chapter08_middleware/summarization.py` adds `SummarizationMiddleware` to an agent. The default model chats, while a small DashScope model from `get_summary_model()` (`DASHSCOPE_SUMMARY_MODEL`, thinking off) writes the summary with a Chinese `summary_prompt`. The triggers are tiny on purpose, so a 6-message history fires them: 6 messages, 100 tokens, or 0.001 of `max_input_tokens`. The `fraction` trigger reads `max_input_tokens` from the summary model's profile, so the script sets `profile={"max_input_tokens": 128000}`. `keep=("messages", 3)` counts from the end of the input, the new question included. It keeps the last history turn plus the new question and replaces everything before them with one summary message.
+
+`chapter08_middleware/human_in_the_loop.py` adds `HumanInTheLoopMiddleware` to the chapter07 agent. Before any tool runs, the agent pauses and shows the tool name, its arguments and a description. Type `approve` (or press Enter) to run it, or `reject` with an optional reason, which goes back to the model instead of the tool result. `check_stock` is configured with `InterruptOnConfig` to allow only approve and reject. To resume after a pause, the agent needs to remember where it stopped, so it has an `InMemorySaver` checkpointer and each `invoke` passes a `thread_id` in its config. The checkpointer keeps the conversation for that thread, so `chat()` sends only the new message, and `reset()` just starts a new thread. `main()` asks four questions, prints the saved history (tool calls, results and rejections included), then resets and checks the earlier result is forgotten. The script reads your decisions from the terminal, so pipe them in to run it unattended:
+
+```bash
+printf 'approve\nreject\n库存系统正在维护\napprove\napprove\n' | python -m chapter08_middleware.human_in_the_loop
+```
 
 ## Adding a new chapter
 
