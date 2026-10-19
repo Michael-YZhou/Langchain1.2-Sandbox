@@ -28,7 +28,8 @@ The material is organized into one directory per chapter. Every file is a standa
 │   └── interactive_loop_agent.py  # Chat with that agent in the terminal (reset / exit)
 ├── chapter08_middleware/
 │   ├── summarization.py         # SummarizationMiddleware: a small model summarises old history
-│   └── human_in_the_loop.py     # HumanInTheLoopMiddleware: approve or reject each tool call
+│   ├── human_in_the_loop.py     # HumanInTheLoopMiddleware: approve or reject each tool call
+│   └── pii.py                   # PIIMiddleware: redact, mask, hash or block PII in the input
 ├── .env.example       # Template for the required environment variables
 ├── requirements.txt   # Pinned dependencies for the whole course
 └── main.py            # Unused PyCharm template stub
@@ -108,6 +109,8 @@ Despite its name, `chapter02_models/test.py` is a demo, not a pytest test. It se
 ```bash
 printf 'approve\nreject\n库存系统正在维护\napprove\napprove\n' | python -m chapter08_middleware.human_in_the_loop
 ```
+
+`chapter08_middleware/pii.py` adds five `PIIMiddleware` rules with `apply_to_input=True`, so personal data in the user message is replaced before the model sees it. Each rule uses a different strategy: emails become `[REDACTED_EMAIL]` (`redact`), the card number becomes `****-****-****-1111` (`mask`), the URL becomes `<url_hash:...>` (`hash`), and the MAC address keeps only its last group (`mask`). The script prints the whole conversation, so you can see the rewritten human message. The built-in detectors are strict: a card number must pass the Luhn checksum and a MAC address needs exactly 6 groups, or they go through unchanged, which is why the inputs use the test card `4111-1111-1111-1111`. The `ip` rule uses `block`, which raises an error instead of rewriting, and the input deliberately contains no IP address (`localhost` is a hostname). Add one, such as `192.168.1.1`, to see the run stop.
 
 ## Adding a new chapter
 
