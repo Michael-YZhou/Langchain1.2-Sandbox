@@ -33,7 +33,8 @@ The material is organized into one directory per chapter. Every file is a standa
 │   ├── model_fall_back.py       # ModelFallbackMiddleware: retry a failed call with another model
 │   ├── to_do_list.py            # TodoListMiddleware: plan a multi-step task with write_todos
 │   ├── tool_retry.py            # ToolRetryMiddleware: retry a tool call that raises an error
-│   └── model_retry.py           # ModelRetryMiddleware: retry a failed model call, then reply with the error
+│   ├── model_retry.py           # ModelRetryMiddleware: retry a failed model call, then reply with the error
+│   └── filesystem_file_search.py  # FilesystemFileSearchMiddleware: glob and grep tools over the repo
 ├── .env.example       # Template for the required environment variables
 ├── requirements.txt   # Pinned dependencies for the whole course
 └── main.py            # Unused PyCharm template stub
@@ -123,6 +124,8 @@ printf 'approve\nreject\n库存系统正在维护\napprove\napprove\n' | python 
 `chapter08_middleware/tool_retry.py` adds `ToolRetryMiddleware` to an agent with a fake `check_weather` tool. The tool raises `TimeoutError` on its first two calls and succeeds on the third, printing a line on each call. The middleware retries only on `TimeoutError` (`retry_on=(TimeoutError,)`), up to 3 times after the first call, with exponential backoff (0.5s, then 1s, capped at `max_delay=10`, plus ±25% jitter). The retries happen inside one tool call, so the conversation shows a single tool call and a single `ToolMessage` with the weather; the model never sees the failures. With `on_failure="continue"`, if every retry fails the error goes back to the model as a `ToolMessage` instead of stopping the run. Lower `max_retries` to 1 to see that.
 
 `chapter08_middleware/model_retry.py` adds `ModelRetryMiddleware`. Like the fallback demo, it copies the default model with a name that doesn't exist, so every call fails with `NotFoundError` (404). `retry_on` is a function, not a tuple of exception types: the middleware calls it after each failed call and retries only if it returns `True`. Here it prints the failure and always returns `True`, so the output shows three failures (the first call plus `max_retries=2`), 0.5s and then 1s apart. With `on_failure="continue"`, the last error comes back as an `AIMessage` ("Model call failed after 3 attempts with NotFoundError: ...") and the run ends normally; `"error"` would raise it instead. Unlike `ModelFallbackMiddleware`, retry calls the same model again, so it helps with short-lived errors such as timeouts or rate limits, not a bad model name. As with the fallback demo, the fake name only works on DashScope: with `LLM_PROVIDER=ollama` the call succeeds and nothing is retried.
+
+`chapter08_middleware/filesystem_file_search.py` adds `FilesystemFileSearchMiddleware`, which gives the agent two tools: `glob_search` (find files by name pattern) and `grep_search` (search file contents with a regex), so the agent passes `tools=[]`. Both are limited to `root_path`, and they show paths relative to it with a leading `/`. The script builds `root_path` from `__file__` (the repo root), because a relative path like `"../"` is resolved against the directory you run from, not the script's folder. `use_ripgrep=False` uses the pure-Python search, and `max_file_size_mb` skips larger files. The agent is asked which Python files define `multiply`. It found `chapter07_agents/agent.py`, `human_in_the_loop.py` and `to_do_list.py`.
 
 ## Adding a new chapter
 
