@@ -29,7 +29,8 @@ The material is organized into one directory per chapter. Every file is a standa
 ├── chapter08_middleware/
 │   ├── summarization.py         # SummarizationMiddleware: a small model summarises old history
 │   ├── human_in_the_loop.py     # HumanInTheLoopMiddleware: approve or reject each tool call
-│   └── pii.py                   # PIIMiddleware: redact, mask, hash or block PII in the input
+│   ├── pii.py                   # PIIMiddleware: redact, mask, hash or block PII in the input
+│   └── model_fall_back.py       # ModelFallbackMiddleware: retry a failed call with another model
 ├── .env.example       # Template for the required environment variables
 ├── requirements.txt   # Pinned dependencies for the whole course
 └── main.py            # Unused PyCharm template stub
@@ -111,6 +112,8 @@ printf 'approve\nreject\n库存系统正在维护\napprove\napprove\n' | python 
 ```
 
 `chapter08_middleware/pii.py` adds five `PIIMiddleware` rules with `apply_to_input=True`, so personal data in the user message is replaced before the model sees it. Each rule uses a different strategy: emails become `[REDACTED_EMAIL]` (`redact`), the card number becomes `****-****-****-1111` (`mask`), the URL becomes `<url_hash:...>` (`hash`), and the MAC address keeps only its last group (`mask`). The script prints the whole conversation, so you can see the rewritten human message. The built-in detectors are strict: a card number must pass the Luhn checksum and a MAC address needs exactly 6 groups, or they go through unchanged, which is why the inputs use the test card `4111-1111-1111-1111`. The `ip` rule uses `block`, which raises `PIIDetectionError` instead of rewriting. The input contains `192.168.1.1`, so the run stops before the model is called, and the script catches the error and prints the blocked type and value (`e.pii_type`, `e.matches`). Remove the IP line to see the other rules rewrite the message and the model reply.
+
+`chapter08_middleware/model_fall_back.py` adds `ModelFallbackMiddleware` with the summary model as the fallback. When the primary model raises an error, the middleware retries the same request with each fallback model in order and re-raises the last error if they all fail. To force a failure, the script copies the default model with a model name that doesn't exist (`model_copy(update={"model_name": "no-such-model"})`), so the API rejects the call. It prints `response_metadata["model_name"]` of the reply, which shows the fallback (`qwen-flash`) answered. The middleware swallows the primary's error without logging it. The fake name only works on DashScope: `ChatOllama` calls the field `model`, so with `LLM_PROVIDER=ollama` the primary succeeds and the fallback never runs.
 
 ## Adding a new chapter
 
