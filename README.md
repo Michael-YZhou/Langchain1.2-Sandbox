@@ -31,7 +31,8 @@ The material is organized into one directory per chapter. Every file is a standa
 │   ├── human_in_the_loop.py     # HumanInTheLoopMiddleware: approve or reject each tool call
 │   ├── pii.py                   # PIIMiddleware: redact, mask, hash or block PII in the input
 │   ├── model_fall_back.py       # ModelFallbackMiddleware: retry a failed call with another model
-│   └── to_do_list.py            # TodoListMiddleware: plan a multi-step task with write_todos
+│   ├── to_do_list.py            # TodoListMiddleware: plan a multi-step task with write_todos
+│   └── tool_retry.py            # ToolRetryMiddleware: retry a tool call that raises an error
 ├── .env.example       # Template for the required environment variables
 ├── requirements.txt   # Pinned dependencies for the whole course
 └── main.py            # Unused PyCharm template stub
@@ -117,6 +118,8 @@ printf 'approve\nreject\n库存系统正在维护\napprove\napprove\n' | python 
 `chapter08_middleware/model_fall_back.py` adds `ModelFallbackMiddleware` with the summary model as the fallback. When the primary model raises an error, the middleware retries the same request with each fallback model in order and re-raises the last error if they all fail. To force a failure, the script copies the default model with a model name that doesn't exist (`model_copy(update={"model_name": "no-such-model"})`), so the API rejects the call. It prints `response_metadata["model_name"]` of the reply, which shows the fallback (`qwen-flash`) answered. The middleware swallows the primary's error without logging it. The fake name only works on DashScope: `ChatOllama` calls the field `model`, so with `LLM_PROVIDER=ollama` the primary succeeds and the fallback never runs.
 
 `chapter08_middleware/to_do_list.py` adds `TodoListMiddleware`, which gives the agent a `write_todos` tool and keeps the current list in `state["todos"]`. The agent also has three tools: `get_weather`, `check_stock` and `multiply` (fake results). The task has three steps, and the last one depends on the second: check the weather in Beijing, check the laptop stock, then multiply the stock by 3. The middleware's built-in prompt tells the model to skip the list for simple requests, so the system prompt tells it to write the list first and mark each item `completed` as soon as it's done. The script prints every message, where you can see each `write_todos` call, then the final list from `response["todos"]`. In a test run the agent called `write_todos` three times. First it wrote the list and ran `get_weather` and `check_stock` in the same turn. Then it marked those two `completed` and called `multiply(52, 3)`. Finally it marked the last item `completed` and answered 156. It updates the list once per turn, not after every tool call, and it had two items `in_progress` at once: the middleware's prompt asks for one at a time but doesn't enforce it.
+
+`chapter08_middleware/tool_retry.py` adds `ToolRetryMiddleware` to an agent with a fake `check_weather` tool. The tool raises `TimeoutError` on its first two calls and succeeds on the third, printing a line on each call. The middleware retries only on `TimeoutError` (`retry_on=(TimeoutError,)`), up to 3 times after the first call, with exponential backoff (0.5s, then 1s, capped at `max_delay=10`, plus ±25% jitter). The retries happen inside one tool call, so the conversation shows a single tool call and a single `ToolMessage` with the weather; the model never sees the failures. With `on_failure="continue"`, if every retry fails the error goes back to the model as a `ToolMessage` instead of stopping the run. Lower `max_retries` to 1 to see that.
 
 ## Adding a new chapter
 
