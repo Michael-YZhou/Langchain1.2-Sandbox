@@ -35,6 +35,8 @@ The material is organized into one directory per chapter. Every file is a standa
 │   ├── tool_retry.py            # ToolRetryMiddleware: retry a tool call that raises an error
 │   ├── model_retry.py           # ModelRetryMiddleware: retry a failed model call, then reply with the error
 │   └── filesystem_file_search.py  # FilesystemFileSearchMiddleware: glob and grep tools over the repo
+├── chapter09_memory/
+│   └── short_term_in_memory.py  # InMemorySaver checkpointer: the agent remembers earlier turns in a thread
 ├── .env.example       # Template for the required environment variables
 ├── requirements.txt   # Pinned dependencies for the whole course
 └── main.py            # Unused PyCharm template stub
@@ -126,6 +128,8 @@ printf 'approve\nreject\n库存系统正在维护\napprove\napprove\n' | python 
 `chapter08_middleware/model_retry.py` adds `ModelRetryMiddleware`. Like the fallback demo, it copies the default model with a name that doesn't exist, so every call fails with `NotFoundError` (404). `retry_on` is a function, not a tuple of exception types: the middleware calls it after each failed call and retries only if it returns `True`. Here it prints the failure and always returns `True`, so the output shows three failures (the first call plus `max_retries=2`), 0.5s and then 1s apart. With `on_failure="continue"`, the last error comes back as an `AIMessage` ("Model call failed after 3 attempts with NotFoundError: ...") and the run ends normally; `"error"` would raise it instead. Unlike `ModelFallbackMiddleware`, retry calls the same model again, so it helps with short-lived errors such as timeouts or rate limits, not a bad model name. As with the fallback demo, the fake name only works on DashScope: with `LLM_PROVIDER=ollama` the call succeeds and nothing is retried.
 
 `chapter08_middleware/filesystem_file_search.py` adds `FilesystemFileSearchMiddleware`, which gives the agent two tools: `glob_search` (find files by name pattern) and `grep_search` (search file contents with a regex), so the agent passes `tools=[]`. Both are limited to `root_path`, and they show paths relative to it with a leading `/`. The script builds `root_path` from `__file__` (the repo root), because a relative path like `"../"` is resolved against the directory you run from, not the script's folder. `use_ripgrep=False` uses the pure-Python search, and `max_file_size_mb` skips larger files. The agent is asked which Python files define `multiply`. It found `chapter07_agents/agent.py`, `human_in_the_loop.py` and `to_do_list.py`.
+
+`chapter09_memory/short_term_in_memory.py` gives an agent short-term memory with an `InMemorySaver` checkpointer. Both `invoke` calls pass the same `thread_id` in `config`, and each sends only the new message. The checkpointer saves the thread's messages after the first call and loads them before the second, so when asked "你好，我是谁？" the agent answers Michael from the first turn. Each response holds the whole thread, which is why the second printout repeats the first turn. The memory lives in the process only: it is gone when the script exits, and a different `thread_id` starts an empty conversation.
 
 ## Adding a new chapter
 
