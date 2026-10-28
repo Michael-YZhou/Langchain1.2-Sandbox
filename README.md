@@ -36,7 +36,8 @@ The material is organized into one directory per chapter. Every file is a standa
 │   ├── model_retry.py           # ModelRetryMiddleware: retry a failed model call, then reply with the error
 │   └── filesystem_file_search.py  # FilesystemFileSearchMiddleware: glob and grep tools over the repo
 ├── chapter09_memory/
-│   └── short_term_in_memory.py  # InMemorySaver checkpointer: the agent remembers earlier turns in a thread
+│   ├── short_term_in_memory.py  # InMemorySaver checkpointer: the agent remembers earlier turns in a thread
+│   └── long_term_in_memory.py   # InMemoryStore + tools: the agent remembers a user across conversations
 ├── .env.example       # Template for the required environment variables
 ├── requirements.txt   # Pinned dependencies for the whole course
 └── main.py            # Unused PyCharm template stub
@@ -130,6 +131,8 @@ printf 'approve\nreject\n库存系统正在维护\napprove\napprove\n' | python 
 `chapter08_middleware/filesystem_file_search.py` adds `FilesystemFileSearchMiddleware`, which gives the agent two tools: `glob_search` (find files by name pattern) and `grep_search` (search file contents with a regex), so the agent passes `tools=[]`. Both are limited to `root_path`, and they show paths relative to it with a leading `/`. The script builds `root_path` from `__file__` (the repo root), because a relative path like `"../"` is resolved against the directory you run from, not the script's folder. `use_ripgrep=False` uses the pure-Python search, and `max_file_size_mb` skips larger files. The agent is asked which Python files define `multiply`. It found `chapter07_agents/agent.py`, `human_in_the_loop.py` and `to_do_list.py`.
 
 `chapter09_memory/short_term_in_memory.py` gives an agent short-term memory with an `InMemorySaver` checkpointer. Both `invoke` calls pass the same `thread_id` in `config`, and each sends only the new message. The checkpointer saves the thread's messages after the first call and loads them before the second, so when asked "你好，我是谁？" the agent answers Michael from the first turn. Each response holds the whole thread, which is why the second printout repeats the first turn. The memory lives in the process only: it is gone when the script exits, and a different `thread_id` starts an empty conversation.
+
+`chapter09_memory/long_term_in_memory.py` gives an agent long-term memory with an `InMemoryStore`, passed as `store=`. A `CustomState` (an `AgentState` subclass with a `user_id` field) is passed as `state_schema`, so `user_id` can be sent in the input of each `invoke`. Two tools reach the store through an injected `ToolRuntime` argument, which the model never sees: `save_user_info(name)` calls `runtime.store.put(("users",), user_id, {"name": name})`, and `get_user_info()` reads it back with `runtime.store.get`. The agent has no checkpointer, so every `invoke` is a fresh conversation with no message history. After "你好我是Michael" saves the name for `user_1`, a new conversation asking "你好，我是谁？" as `user_1` calls `get_user_info` and answers Michael, while the same question as `user_2` gets `user info not found`. The script ends by printing `store.search(("users",))`. Like the checkpointer, `InMemoryStore` lives in the process only. PyCharm flags `state_schema=CustomState` with a false "inconsistent required qualifier" warning about the inherited `jump_to` field, so `create_agent` has a `# noinspection PyTypeChecker` comment.
 
 ## Adding a new chapter
 
