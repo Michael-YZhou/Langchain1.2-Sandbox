@@ -38,6 +38,9 @@ The material is organized into one directory per chapter. Every file is a standa
 ├── chapter09_memory/
 │   ├── short_term_in_memory.py  # InMemorySaver checkpointer: the agent remembers earlier turns in a thread
 │   └── long_term_in_memory.py   # InMemoryStore + tools: the agent remembers a user across conversations
+├── chapter10_RAG/
+│   └── text_loader.py           # TextLoader: load asset/load/text.txt as a Document
+├── asset/load/        # Sample files for the document loaders
 ├── .env.example       # Template for the required environment variables
 ├── requirements.txt   # Pinned dependencies for the whole course
 └── main.py            # Unused PyCharm template stub
@@ -133,6 +136,8 @@ printf 'approve\nreject\n库存系统正在维护\napprove\napprove\n' | python 
 `chapter09_memory/short_term_in_memory.py` gives an agent short-term memory with an `InMemorySaver` checkpointer. Both `invoke` calls pass the same `thread_id` in `config`, and each sends only the new message. The checkpointer saves the thread's messages after the first call and loads them before the second, so when asked "你好，我是谁？" the agent answers Michael from the first turn. Each response holds the whole thread, which is why the second printout repeats the first turn. The memory lives in the process only: it is gone when the script exits, and a different `thread_id` starts an empty conversation.
 
 `chapter09_memory/long_term_in_memory.py` gives an agent long-term memory with an `InMemoryStore`, passed as `store=`. A `CustomState` (an `AgentState` subclass with a `user_id` field) is passed as `state_schema`, so `user_id` can be sent in the input of each `invoke`. Two tools reach the store through an injected `ToolRuntime` argument, which the model never sees: `save_user_info(name)` calls `runtime.store.put(("users",), user_id, {"name": name})`, and `get_user_info()` reads it back with `runtime.store.get`. The agent has no checkpointer, so every `invoke` is a fresh conversation with no message history. After "你好我是Michael" saves the name for `user_1`, a new conversation asking "你好，我是谁？" as `user_1` calls `get_user_info` and answers Michael, while the same question as `user_2` gets `user info not found`. The script ends by printing `store.search(("users",))`. Like the checkpointer, `InMemoryStore` lives in the process only. PyCharm flags `state_schema=CustomState` with a false "inconsistent required qualifier" warning about the inherited `jump_to` field, so `create_agent` has a `# noinspection PyTypeChecker` comment.
+
+`chapter10_RAG/text_loader.py` loads `asset/load/text.txt` (a short article about LangChain) with `TextLoader` and prints the result. `load()` returns a list holding one `Document` for the whole file: `metadata` has only `source`, the file path, and `page_content` is the text. The path is built from `__file__`, so the script works from the repo root with `python -m`; a relative path like `"../asset/load/text.txt"` is resolved against the directory you run from. `encoding="utf-8"` is passed explicitly instead of relying on the platform default.
 
 ## Adding a new chapter
 
