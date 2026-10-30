@@ -1,0 +1,28 @@
+  {
+  "messages": [
+    {
+      "sender": "alice_wang",
+      "title": "Trying document loaders",
+      "content": "Hi team, has anyone tried the new LangChain document loaders?",
+      "timestamp": "2026-03-02T09:15:00Z"
+    },
+    {
+      "sender": "bob_li",
+      "title": "How TextLoader works",
+      "content": "Yes, TextLoader returns one Document for the whole file.",
+      "timestamp": "2026-03-02T09:17:42Z"
+    },
+    {
+      "sender": "carol_zhang",
+      "title": "How CSVLoader works",
+      "content": "CSVLoader is different: it gives you one Document per row.",
+      "timestamp": "2026-03-02T09:20:05Z"
+    },
+    {
+      "sender": "david_chen",
+      "title": "Next up: JSONLoader",
+      "content": "Next I want to try JSONLoader with a jq schema like .messages[].content.",
+      "timestamp": "2026-03-02T09:23:31Z"
+    }
+  ]
+}
