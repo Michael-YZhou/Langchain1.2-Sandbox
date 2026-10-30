@@ -39,7 +39,8 @@ The material is organized into one directory per chapter. Every file is a standa
 │   ├── short_term_in_memory.py  # InMemorySaver checkpointer: the agent remembers earlier turns in a thread
 │   └── long_term_in_memory.py   # InMemoryStore + tools: the agent remembers a user across conversations
 ├── chapter10_RAG/
-│   └── text_loader.py           # TextLoader: load asset/load/text.txt as a Document
+│   ├── text_loader.py           # TextLoader: load asset/load/text.txt as a Document
+│   └── csv_loader.py            # CSVLoader: one Document per row of asset/load/users.csv
 ├── asset/load/        # Sample files for the document loaders
 ├── .env.example       # Template for the required environment variables
 ├── requirements.txt   # Pinned dependencies for the whole course
@@ -138,6 +139,8 @@ printf 'approve\nreject\n库存系统正在维护\napprove\napprove\n' | python 
 `chapter09_memory/long_term_in_memory.py` gives an agent long-term memory with an `InMemoryStore`, passed as `store=`. A `CustomState` (an `AgentState` subclass with a `user_id` field) is passed as `state_schema`, so `user_id` can be sent in the input of each `invoke`. Two tools reach the store through an injected `ToolRuntime` argument, which the model never sees: `save_user_info(name)` calls `runtime.store.put(("users",), user_id, {"name": name})`, and `get_user_info()` reads it back with `runtime.store.get`. The agent has no checkpointer, so every `invoke` is a fresh conversation with no message history. After "你好我是Michael" saves the name for `user_1`, a new conversation asking "你好，我是谁？" as `user_1` calls `get_user_info` and answers Michael, while the same question as `user_2` gets `user info not found`. The script ends by printing `store.search(("users",))`. Like the checkpointer, `InMemoryStore` lives in the process only. PyCharm flags `state_schema=CustomState` with a false "inconsistent required qualifier" warning about the inherited `jump_to` field, so `create_agent` has a `# noinspection PyTypeChecker` comment.
 
 `chapter10_RAG/text_loader.py` loads `asset/load/text.txt` (a short article about LangChain) with `TextLoader` and prints the result. `load()` returns a list holding one `Document` for the whole file: `metadata` has only `source`, the file path, and `page_content` is the text. The path is built from `__file__`, so the script works from the repo root with `python -m`; a relative path like `"../asset/load/text.txt"` is resolved against the directory you run from. `encoding="utf-8"` is passed explicitly instead of relying on the platform default.
+
+`chapter10_RAG/csv_loader.py` loads `asset/load/users.csv` (four made-up users with `username`, `phone` and `email`) with `CSVLoader`. Unlike `TextLoader`, it returns one `Document` per data row, so the script gets 4. Each `page_content` lists the row's fields as `column: value` lines, and `metadata` holds `source` (the file path) and `row` (0-based, not counting the header).
 
 ## Adding a new chapter
 
