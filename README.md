@@ -40,7 +40,8 @@ The material is organized into one directory per chapter. Every file is a standa
 │   └── long_term_in_memory.py   # InMemoryStore + tools: the agent remembers a user across conversations
 ├── chapter10_RAG/
 │   ├── text_loader.py           # TextLoader: load asset/load/text.txt as a Document
-│   └── csv_loader.py            # CSVLoader: one Document per row of asset/load/users.csv
+│   ├── csv_loader.py            # CSVLoader: one Document per row of asset/load/users.csv
+│   └── json_loader.py           # JSONLoader + jq: one Document per message in asset/load/messages.json
 ├── asset/load/        # Sample files for the document loaders
 ├── .env.example       # Template for the required environment variables
 ├── requirements.txt   # Pinned dependencies for the whole course
@@ -141,6 +142,8 @@ printf 'approve\nreject\n库存系统正在维护\napprove\napprove\n' | python 
 `chapter10_RAG/text_loader.py` loads `asset/load/text.txt` (a short article about LangChain) with `TextLoader` and prints the result. `load()` returns a list holding one `Document` for the whole file: `metadata` has only `source`, the file path, and `page_content` is the text. The path is built from `__file__`, so the script works from the repo root with `python -m`; a relative path like `"../asset/load/text.txt"` is resolved against the directory you run from. `encoding="utf-8"` is passed explicitly instead of relying on the platform default.
 
 `chapter10_RAG/csv_loader.py` loads `asset/load/users.csv` (four made-up users with `username`, `phone` and `email`) with `CSVLoader`. Unlike `TextLoader`, it returns one `Document` per data row, so the script gets 4. Each `page_content` lists the row's fields as `column: value` lines, and `metadata` holds `source` (the file path) and `row` (0-based, not counting the header).
+
+`chapter10_RAG/json_loader.py` loads `asset/load/messages.json` (an object whose `messages` list holds four chat messages with `sender`, `title`, `content` and `timestamp`) with `JSONLoader`, which uses the `jq` package to pick records out of the file. `jq_schema=".messages[]"` makes each message its own `Document`, and `content_key="content"` puts the message text in `page_content`. `metadata_func` copies `sender`, `title` and `timestamp` into `metadata`, next to the `source` path and `seq_num` (1-based) that the loader adds, so every field of each message ends up in the `Document`. Without `content_key`, `page_content` must be a string, so the loader would raise an error on the message objects.
 
 ## Adding a new chapter
 
