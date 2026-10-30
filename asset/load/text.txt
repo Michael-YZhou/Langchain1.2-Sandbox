@@ -1,0 +1,29 @@
+A Short Introduction to LangChain
+
+LangChain is an open-source framework for building applications powered by large language models (LLMs). It provides standard interfaces for chat models, prompts, tools, memory, and retrieval, so developers can swap providers and components without rewriting their application logic.
+
+Chat Models
+
+A chat model takes a list of messages and returns a new message. LangChain wraps many providers behind the same interface, including Alibaba Cloud's Qwen models through DashScope and local models served by Ollama. The init_chat_model helper creates a model from a provider and model name, and every chat model supports invoke, stream, and batch.
+
+Prompt Templates
+
+Prompt templates turn user input into the messages a model expects. A ChatPromptTemplate holds system, human, and AI messages with placeholders such as {topic} or {language}, which are filled in at runtime. Templates keep prompts reusable and make it easy to test different wording.
+
+Tools and Agents
+
+Tools let a model act on the outside world: look up the weather, query a database, or call an API. The model decides which tool to call and with which arguments, and the application runs the tool and sends back the result. An agent repeats this loop until it can give a final answer. Middleware can add summarization, human review, retries, or PII filtering around each step.
+
+Document Loaders
+
+Retrieval-augmented generation (RAG) starts with loading documents. A document loader reads a source, such as a text file, a PDF, a web page, or a CSV, and returns a list of Document objects. Each Document has page_content, the text itself, and metadata, a dictionary that records details such as the source file path.
+
+For example, TextLoader reads a plain text file like this one and returns a single Document whose metadata contains the file's path. Larger documents are then split into smaller chunks with a text splitter, embedded into vectors, and stored in a vector database such as Milvus for similarity search.
+
+Text Splitters
+
+Models have a limited context window, and retrieval works best on focused passages, so long documents are usually split before they are embedded. RecursiveCharacterTextSplitter tries to split on paragraphs first, then sentences, then words, keeping each chunk under a target size. A small overlap between neighboring chunks helps preserve context that would otherwise be cut at a boundary.
+
+Summary
+
+LangChain connects the pieces of an LLM application: models generate text, prompts shape the input, tools extend what the model can do, and loaders and splitters bring your own data into the conversation. Together they make it possible to build assistants that answer questions about documents the model has never seen before.
