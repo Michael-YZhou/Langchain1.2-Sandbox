@@ -42,7 +42,8 @@ The material is organized into one directory per chapter. Every file is a standa
 │   ├── text_loader.py           # TextLoader: load asset/load/text.txt as a Document
 │   ├── csv_loader.py            # CSVLoader: one Document per row of asset/load/users.csv
 │   ├── json_loader.py           # JSONLoader + jq: one Document per message in asset/load/messages.json
-│   └── pdf_loader.py            # PyPDFLoader: one Document per PDF page (fill in the path first)
+│   ├── pdf_loader.py            # PyPDFLoader: one Document per PDF page (fill in the path first)
+│   └── recursive_char_text_splitter.py  # RecursiveCharacterTextSplitter: split text.txt into small overlapping chunks
 ├── asset/load/        # Sample files for the document loaders
 ├── .env.example       # Template for the required environment variables
 ├── requirements.txt   # Pinned dependencies for the whole course
@@ -147,6 +148,8 @@ printf 'approve\nreject\n库存系统正在维护\napprove\napprove\n' | python 
 `chapter10_RAG/json_loader.py` loads `asset/load/messages.json` (an object whose `messages` list holds four chat messages with `sender`, `title`, `content` and `timestamp`) with `JSONLoader`, which uses the `jq` package to pick records out of the file. `jq_schema=".messages[]"` makes each message its own `Document`, and `content_key="content"` puts the message text in `page_content`. `metadata_func` copies `sender`, `title` and `timestamp` into `metadata`, next to the `source` path and `seq_num` (1-based) that the loader adds, so every field of each message ends up in the `Document`. Without `content_key`, `page_content` must be a string, so the loader would raise an error on the message objects.
 
 `chapter10_RAG/pdf_loader.py` loads a PDF with `PyPDFLoader`, which uses the `pypdf` package. Its `file_path` is left empty, so fill in the path of a PDF before running it; the comment shows the `__file__`-based form the other demos use. The loader returns one `Document` per page, and each page's `metadata` holds `source`, `page` (0-based), `page_label` and `total_pages`, along with details read from the PDF such as `producer` and `creationdate`. `extraction_mode="plain"` (the default) extracts the text in reading order; `"layout"` tries to keep the page layout instead.
+
+`chapter10_RAG/recursive_char_text_splitter.py` loads `asset/load/text.txt` with `TextLoader` and splits it with `RecursiveCharacterTextSplitter.split_documents`. The splitter tries each of its `separators` in turn (paragraph `"\n\n"`, line `"\n"`, sentence `". "`, word `" "`, then single characters) until a piece fits in `chunk_size=40` characters, as measured by `length_function=len`. `chunk_overlap=5` repeats up to 5 characters from the end of one chunk at the start of the next, which in practice is a short word like "by". `keep_separator="end"` keeps the `". "` with the sentence before it, so chunks end at the end of a sentence; the trailing space is then trimmed by `strip_whitespace` (on by default). `add_start_index=True` adds `start_index`, the chunk's character offset in the original text, to each chunk's `metadata`. The script prints the chunk count (89) and then each chunk's `start_index`, length and text. The tiny `chunk_size` is only to make the splitting visible; real RAG chunks are usually a few hundred to a thousand characters.
 
 ## Adding a new chapter
 
