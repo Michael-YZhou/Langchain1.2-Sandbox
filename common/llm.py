@@ -9,6 +9,7 @@ import os
 
 from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
+from langchain.embeddings import init_embeddings
 
 load_dotenv()  # loads .env from the repo root; real OS env vars take precedence
 
@@ -59,6 +60,25 @@ def get_summary_model(**kwargs):
         api_key=_require("DASHSCOPE_API_KEY"),
         api_base=_require("DASHSCOPE_BASE_URL"),
         extra_body={"enable_thinking": False},
+        **kwargs,
+    )
+
+
+def init_embedding_model(**kwargs):
+    """Return the DashScope embedding model (DASHSCOPE_EMBEDDING_MODEL) via its OpenAI-compatible endpoint.
+
+    check_embedding_ctx_length=False sends raw strings: by default OpenAIEmbeddings
+    tokenizes with tiktoken and sends token ids, which DashScope rejects. DashScope also
+    caps a request at 10 texts, hence chunk_size=10. Extra kwargs (e.g. dimensions=512)
+    go to the OpenAIEmbeddings constructor.
+    """
+    kwargs.setdefault("chunk_size", 10)
+    return init_embeddings(
+        _require("DASHSCOPE_EMBEDDING_MODEL"),
+        provider="openai",
+        api_key=_require("DASHSCOPE_API_KEY"),
+        base_url=_require("DASHSCOPE_BASE_URL"),
+        check_embedding_ctx_length=False,
         **kwargs,
     )
 
