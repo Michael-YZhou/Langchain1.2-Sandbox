@@ -43,7 +43,8 @@ The material is organized into one directory per chapter. Every file is a standa
 │   ├── csv_loader.py            # CSVLoader: one Document per row of asset/load/users.csv
 │   ├── json_loader.py           # JSONLoader + jq: one Document per message in asset/load/messages.json
 │   ├── pdf_loader.py            # PyPDFLoader: one Document per PDF page (fill in the path first)
-│   └── recursive_char_text_splitter.py  # RecursiveCharacterTextSplitter: split text.txt into small overlapping chunks
+│   ├── recursive_char_text_splitter.py  # RecursiveCharacterTextSplitter: split text.txt into small overlapping chunks
+│   └── character_text_splitter.py       # CharacterTextSplitter: split text.txt on paragraphs only
 ├── asset/load/        # Sample files for the document loaders
 ├── .env.example       # Template for the required environment variables
 ├── requirements.txt   # Pinned dependencies for the whole course
@@ -150,6 +151,8 @@ printf 'approve\nreject\n库存系统正在维护\napprove\napprove\n' | python 
 `chapter10_RAG/pdf_loader.py` loads a PDF with `PyPDFLoader`, which uses the `pypdf` package. Its `file_path` is left empty, so fill in the path of a PDF before running it; the comment shows the `__file__`-based form the other demos use. The loader returns one `Document` per page, and each page's `metadata` holds `source`, `page` (0-based), `page_label` and `total_pages`, along with details read from the PDF such as `producer` and `creationdate`. `extraction_mode="plain"` (the default) extracts the text in reading order; `"layout"` tries to keep the page layout instead.
 
 `chapter10_RAG/recursive_char_text_splitter.py` loads `asset/load/text.txt` with `TextLoader` and splits it with `RecursiveCharacterTextSplitter.split_documents`. The splitter tries each of its `separators` in turn (paragraph `"\n\n"`, line `"\n"`, sentence `". "`, word `" "`, then single characters) until a piece fits in `chunk_size=40` characters, as measured by `length_function=len`. `chunk_overlap=5` repeats up to 5 characters from the end of one chunk at the start of the next, which in practice is a short word like "by". `keep_separator="end"` keeps the `". "` with the sentence before it, so chunks end at the end of a sentence; the trailing space is then trimmed by `strip_whitespace` (on by default). `add_start_index=True` adds `start_index`, the chunk's character offset in the original text, to each chunk's `metadata`. The script prints the chunk count (89) and then each chunk's `start_index`, length and text. The tiny `chunk_size` is only to make the splitting visible; real RAG chunks are usually a few hundred to a thousand characters.
+
+`chapter10_RAG/character_text_splitter.py` splits the same file with `CharacterTextSplitter`, which uses a single `separator` instead of a list. With `separator="\n\n"`, `chunk_size=300` and `chunk_overlap=0`, it splits the text into paragraphs and then combines neighbouring paragraphs while they still fit in 300 characters. It never splits a paragraph further, so the four paragraphs longer than 300 characters become oversized chunks (345, 375, 318 and 389 characters), and the splitter logs a `Created a chunk of size …, which is longer than the specified 300` warning for each. Combining can also join a section's heading to the end of the previous section's paragraph: chunk 1 ends with the "Chat Models" heading. The script prints 13 chunks, each with its `start_index` (from `add_start_index=True`), length and text. Compare it with the recursive splitter, which falls back to lines, sentences and words to keep every chunk within `chunk_size`.
 
 ## Adding a new chapter
 
