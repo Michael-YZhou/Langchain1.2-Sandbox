@@ -45,7 +45,8 @@ The material is organized into one directory per chapter. Every file is a standa
 │   ├── pdf_loader.py            # PyPDFLoader: one Document per PDF page (fill in the path first)
 │   ├── recursive_char_text_splitter.py  # RecursiveCharacterTextSplitter: split text.txt into small overlapping chunks
 │   ├── character_text_splitter.py       # CharacterTextSplitter: split text.txt on paragraphs only
-│   └── token_text_splitter.py           # TokenTextSplitter: split text.txt into 100-token chunks (cl100k_base)
+│   ├── token_text_splitter.py           # TokenTextSplitter: split text.txt into 100-token chunks (cl100k_base)
+│   └── embedding_model.py               # Embed a query and the users.csv rows with the DashScope embedding model
 ├── asset/load/        # Sample files for the document loaders
 ├── .env.example       # Template for the required environment variables
 ├── requirements.txt   # Pinned dependencies for the whole course
@@ -159,6 +160,8 @@ printf 'approve\nreject\n库存系统正在维护\napprove\napprove\n' | python 
 `chapter10_RAG/character_text_splitter.py` splits the same file with `CharacterTextSplitter`, which uses a single `separator` instead of a list. With `separator="\n\n"`, `chunk_size=300` and `chunk_overlap=0`, it splits the text into paragraphs and then combines neighbouring paragraphs while they still fit in 300 characters. It never splits a paragraph further, so the four paragraphs longer than 300 characters become oversized chunks (345, 375, 318 and 389 characters), and the splitter logs a `Created a chunk of size …, which is longer than the specified 300` warning for each. Combining can also join a section's heading to the end of the previous section's paragraph: chunk 1 ends with the "Chat Models" heading. The script prints 13 chunks, each with its `start_index` (from `add_start_index=True`), length and text. Compare it with the recursive splitter, which falls back to lines, sentences and words to keep every chunk within `chunk_size`.
 
 `chapter10_RAG/token_text_splitter.py` splits the same file with `TokenTextSplitter`, which measures `chunk_size` and `chunk_overlap` in tokens. `encoding_name="cl100k_base"` selects the OpenAI encoding through the `tiktoken` package, which downloads the encoding file the first time it runs and caches it. The file is 543 tokens, so `chunk_size=100` and `chunk_overlap=10` give 6 chunks: five of 100 tokens and a last one of 93. Their lengths in characters vary (460 to 542), because words take different numbers of tokens. The splitter cuts at token boundaries without looking at words or sentences, so chunk 0 ends in the middle of a word ("served by Oll") and chunk 3 starts with a stray `.`; each chunk then starts with the last 10 tokens of the one before. The script counts tokens with `tiktoken` directly and prints each chunk's token count, character count and text. It doesn't use `add_start_index`, unlike the other splitter demos: LangChain searches for each chunk from the previous chunk's end minus `chunk_overlap`, taken as characters, so with a token overlap the search starts too late and every other chunk gets `start_index=-1`.
+
+`chapter10_RAG/embedding_model.py` gets the DashScope embedding model from `init_embedding_model()` (`DASHSCOPE_EMBEDDING_MODEL`). It embeds one sentence with `embed_query` and prints the vector's length (1024) and first 5 values. Then it loads `asset/load/users.csv` with `CSVLoader`, embeds the 4 rows' `page_content` in one `embed_documents` call, and prints each row's text with the first 3 values of its vector. `embed_query` and `embed_documents` return the same kind of vector; some providers treat queries and documents differently, but here the split just matches how a RAG pipeline uses them.
 
 ## Adding a new chapter
 
