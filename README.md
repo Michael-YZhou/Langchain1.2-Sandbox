@@ -61,6 +61,8 @@ Scripts can talk to either of two backends, chosen by `LLM_PROVIDER`:
 
 The scripts use LangChain chat models built with `init_chat_model`. `common/llm.py` reads the provider's settings and returns a ready model with thinking turned on. DashScope goes through `ChatDeepSeek` pointed at its OpenAI-compatible endpoint, because plain `ChatOpenAI` drops the reasoning text. Ollama goes through `ChatOllama` and its native API. Both put the streamed reasoning in `chunk.additional_kwargs["reasoning_content"]`.
 
+For RAG, `init_embedding_model()` returns a DashScope embedding model (`DASHSCOPE_EMBEDDING_MODEL`) through the same OpenAI-compatible endpoint, whatever `LLM_PROVIDER` says. It sends raw strings rather than token ids (`check_embedding_ctx_length=False`) and batches at most 10 texts per request, DashScope's limit.
+
 ## Setup
 
 1. Create and activate the conda environment:
@@ -93,6 +95,7 @@ The scripts use LangChain chat models built with `init_chat_model`. `common/llm.
    | `DASHSCOPE_BASE_URL` | DashScope's OpenAI-compatible endpoint URL    |
    | `DASHSCOPE_MODEL`    | Cloud model name, e.g. `qwen3.8-max`          |
    | `DASHSCOPE_SUMMARY_MODEL` | Small model for summarising, e.g. `qwen-flash` (chapter08) |
+   | `DASHSCOPE_EMBEDDING_MODEL` | Embedding model, e.g. `qwen3.7-text-embedding` (chapter10) |
    | `OLLAMA_BASE_URL`    | Usually `http://localhost:11434` (no `/v1`)   |
    | `OLLAMA_MODEL`       | A model you've pulled (see `ollama list`)     |
    | `LANGSMITH_*`        | LangSmith tracing settings, for chapter03     |
