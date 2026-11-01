@@ -64,7 +64,7 @@ def get_summary_model(**kwargs):
     )
 
 
-def init_embedding_model(**kwargs):
+def get_embedding_model(**kwargs):
     """Return the DashScope embedding model (DASHSCOPE_EMBEDDING_MODEL) via its OpenAI-compatible endpoint.
 
     check_embedding_ctx_length=False sends raw strings: by default OpenAIEmbeddings

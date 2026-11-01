@@ -2,11 +2,11 @@ from pathlib import Path
 
 from langchain_community.document_loaders import CSVLoader
 
-from common.llm import init_embedding_model
+from common.llm import get_embedding_model
 
 repo_root = Path(__file__).resolve().parent.parent
 
-embedding_model = init_embedding_model()
+embedding_model = get_embedding_model()
 
 print("############ Embed text ###############\n\n")
 
