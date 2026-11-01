@@ -46,7 +46,8 @@ The material is organized into one directory per chapter. Every file is a standa
 │   ├── recursive_char_text_splitter.py  # RecursiveCharacterTextSplitter: split text.txt into small overlapping chunks
 │   ├── character_text_splitter.py       # CharacterTextSplitter: split text.txt on paragraphs only
 │   ├── token_text_splitter.py           # TokenTextSplitter: split text.txt into 100-token chunks (cl100k_base)
-│   └── embedding_model.py               # Embed a query and the users.csv rows with the DashScope embedding model
+│   ├── embedding_model.py               # Embed a query and the users.csv rows with the DashScope embedding model
+│   └── milvus_database.py               # Milvus: store embedded sentences in a collection and search them
 ├── asset/load/        # Sample files for the document loaders
 ├── .env.example       # Template for the required environment variables
 ├── requirements.txt   # Pinned dependencies for the whole course
@@ -102,6 +103,16 @@ For RAG, `get_embedding_model()` returns a DashScope embedding model (`DASHSCOPE
    | `LANGSMITH_*`        | LangSmith tracing settings, for chapter03     |
 
    `.env` is gitignored. `common/llm.py` loads it with `load_dotenv()`, and real OS environment variables take precedence over it. Never hardcode keys in scripts.
+
+4. For the vector database demo (`chapter10_RAG/milvus_database.py`), run a **Milvus 2.6 Standalone** server, matching `pymilvus==2.6.12`, at `localhost:19530`. On macOS, use Docker Compose with the official file from the [Milvus releases](https://github.com/milvus-io/milvus/releases), for example:
+
+   ```bash
+   curl -L https://github.com/milvus-io/milvus/releases/download/v2.6.26/milvus-standalone-docker-compose.yml -o docker-compose.yml
+   docker compose up -d
+   curl http://localhost:9091/healthz   # → OK
+   ```
+
+   [Attu](https://github.com/zilliztech/attu) (`zilliz/attu:v2.6`) is an optional web UI for browsing the collections.
 
 ## Running
 
@@ -162,6 +173,8 @@ printf 'approve\nreject\n库存系统正在维护\napprove\napprove\n' | python 
 `chapter10_RAG/token_text_splitter.py` splits the same file with `TokenTextSplitter`, which measures `chunk_size` and `chunk_overlap` in tokens. `encoding_name="cl100k_base"` selects the OpenAI encoding through the `tiktoken` package, which downloads the encoding file the first time it runs and caches it. The file is 543 tokens, so `chunk_size=100` and `chunk_overlap=10` give 6 chunks: five of 100 tokens and a last one of 93. Their lengths in characters vary (460 to 542), because words take different numbers of tokens. The splitter cuts at token boundaries without looking at words or sentences, so chunk 0 ends in the middle of a word ("served by Oll") and chunk 3 starts with a stray `.`; each chunk then starts with the last 10 tokens of the one before. The script counts tokens with `tiktoken` directly and prints each chunk's token count, character count and text. It doesn't use `add_start_index`, unlike the other splitter demos: LangChain searches for each chunk from the previous chunk's end minus `chunk_overlap`, taken as characters, so with a token overlap the search starts too late and every other chunk gets `start_index=-1`.
 
 `chapter10_RAG/embedding_model.py` gets the DashScope embedding model from `get_embedding_model()` (`DASHSCOPE_EMBEDDING_MODEL`). It embeds one sentence with `embed_query` and prints the vector's length (1024) and first 5 values. Then it loads `asset/load/users.csv` with `CSVLoader`, embeds the 4 rows' `page_content` in one `embed_documents` call, and prints each row's text with the first 3 values of its vector. `embed_query` and `embed_documents` return the same kind of vector; some providers treat queries and documents differently, but here the split just matches how a RAG pipeline uses them.
+
+`chapter10_RAG/milvus_database.py` stores vectors in Milvus and searches them with `MilvusClient`. It creates a `rag_demo` database if it's missing and switches to it. Then it creates a `docs` collection with quick setup: `dimension=1024` (the embedding size) and `metric_type="COSINE"` give an `id` primary key, a `vector` field and dynamic fields, and the collection is loaded automatically. It embeds three sentences with `embed_documents`: one about Milvus, one about LangChain and an unrelated one about pandas. It upserts them as ids 0–2, with `text` and `source` stored as dynamic fields, then flushes and prints the row count. Last, it embeds the query "什么是向量数据库" ("what is a vector database") with `embed_query`, the same model as the documents, and asks `search` for the top 3. With COSINE, `distance` is the cosine similarity, so higher means closer: the Milvus sentence comes first (about 0.73), LangChain second (about 0.30) and pandas last (about 0.14). The script is safe to re-run, because it skips creating anything that already exists and `upsert` overwrites the same three ids.
 
 ## Adding a new chapter
 
